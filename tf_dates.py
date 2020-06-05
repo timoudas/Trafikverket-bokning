@@ -36,7 +36,7 @@ def selenium_get_time(ort):
     
     try:
         element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[@class='col-sm-3 text-center']/button[@data-bind='click:$parent.select']")))
-        first_time = driver.find_element_by_xpath("//div[@class='col-xs-6']/label[@class='hidden-xs']")
+        first_time = driver.find_element_by_xpath("//div[@class='col-xs-6']/strong")
         return first_time.text
     except (NoSuchElementException, TimeoutException) as e:
         print('Nothing found for: ', ort)
@@ -79,7 +79,7 @@ def main(ort):
     first_availible = selenium_get_time(ort)
     if first_availible:
         date = convert_time(first_availible)
-        if check_schedule(date, '2020-06-27', '2020-12-01'):
+        if check_schedule(date, '2020-06-27', '2020-10-01'):
             print('Found: ', ort +' '+ first_availible)
             #send_email(first_availible, ort)
         else:
@@ -88,7 +88,7 @@ def main(ort):
 
 if __name__ == '__main__':
 
-    ORTER = ['Södertälje', 'Västerås', 'Flen', 'Eskilstuna', 'Strängnäs']
+    ORTER = ['Södertälje', 'Västerås', 'Flen', 'Eskilstuna', 'Strängnäs', 'Katrineholm', 'Järfälla', 'Köping']
     for ort in ORTER:
         main(ort)
 
