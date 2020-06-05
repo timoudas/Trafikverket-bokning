@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from selenium import webdriver
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -32,11 +33,12 @@ def selenium_get_time(ort):
     inputElement.send_keys(ort)
     inputElement.send_keys(Keys.ENTER)
     # time.sleep(10)
-    element = WebDriverWait(driver, 10).until(EC.text_to_be_present_in_element((By.XPATH, "//div[@class='col-sm-9']/label[@class='hidden-x']"), text_='Lediga provtider'))
+    
     try:
-        first_time = driver.find_element_by_xpath("//div[@class='col-xs-6']/strong")
+        element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[@class='col-sm-3 text-center']/button[@data-bind='click:$parent.select']")))
+        first_time = driver.find_element_by_xpath("//div[@class='col-xs-6']/label[@class='hidden-xs']")
         return first_time.text
-    except NoSuchElementException as e:
+    except (NoSuchElementException, TimeoutException) as e:
         print('Nothing found for: ', ort)
         driver.close()
 
