@@ -1,4 +1,9 @@
 import datetime
+import schedule
+import threading
+
+
+from datetime import date
 
 import smtplib
 import time
@@ -24,12 +29,13 @@ def selenium_get_time(ort):
     options = Options()
     options.headless = True
     driver = webdriver.Chrome(chrome_options=options, executable_path='/Users/andreas/.wdm/chromedriver/83.0.4103.39/mac64/chromedriver')
+
     # driver.get("https://fp.trafikverket.se/boka/#/search/SPHhISIPAfhPP/5/0/0/0")
     
     driver.get("https://fp.trafikverket.se/boka/#/search/dIccADaISRCIi/5/0/0/0")
-    element = WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.CLASS_NAME, "form-control")))
-    driver.find_element_by_xpath("//select[@class='form-control']/option[@value='12']").click()
-    driver.find_element_by_xpath("//select[@id='vehicle-select']/option[@value='2']").click()
+    element = WebDriverWait(driver, 40).until(EC.element_to_be_clickable((By.CLASS_NAME, "form-control")))
+    driver.find_element_by_xpath("//select[@id='examination-type-select']/option[@value='3']").click()
+    driver.find_element_by_xpath("//select[@id='language-select']/option[@value='13']").click()
     driver.find_element_by_id('id-control-searchText').clear()
     inputElement = driver.find_element_by_id("id-control-searchText")
     inputElement.send_keys(ort)
@@ -41,9 +47,11 @@ def selenium_get_time(ort):
         first_time = driver.find_element_by_xpath("//div[@class='col-xs-6']/strong")
         return first_time.text
     except (NoSuchElementException, TimeoutException) as e:
-        print('Nothing found for: ', ort)
         driver.close()
-
+        if NoSuchElementException:
+            print('Nothing found for: ', ort, ' NoElemFound')
+        else:
+            print('Nothing found for: ', ort, ' TimedOut')
 
 def convert_time(time_stamp):
     date_time_obj = datetime.datetime.strptime(time_stamp, '%Y-%m-%d %H:%M')
@@ -81,11 +89,13 @@ def main(ort):
     first_availible = selenium_get_time(ort)
     if first_availible:
         date = convert_time(first_availible)
-        if check_schedule(date, '2020-06-27', '2020-10-01'):
-            print('Found: ', ort +' '+ first_availible)
-            #send_email(first_availible, ort)
+        if check_schedule(date, '2020-06-27', '2020-07-13'):
+            print('FOUND: ', ort +' '+ first_availible)
+            send_email(first_availible, ort)
         else:
-            print('Found Nothing for: ', ort)
+            now = datetime.datetime.now()
+            dt_string = now.strftime("%H:%M:%S")
+            print('Found Nothing for: ', ort, ' ', dt_string)
 
 def selenium_get_orter():
     options = Options()
@@ -97,39 +107,31 @@ def selenium_get_orter():
     driver.find_element_by_xpath("//button[@data-bind='click:selectLocation']").click()
     time.sleep(5)
     elems = driver.find_elements_by_xpath("//a[@class='list-group-item']/span[@class='list-group-item-heading']")
+    driver.close()
+    driver.quit()
     return elems
 
+def run():
+    ORTER = ['Södertälje', 'Stockholm', 'Järfälla', 'Sollentuna']
+    for ort in ORTER:
+        main(ort)
 
-def gui():
-# Very basic form.  Return values as a list
-    with open('orter.txt', 'r') as f:
-        orter = f.readlines()
-    print(orter)
-    form = sg.FlexForm('Simple data entry form')  # begin with a blank form
 
-    layout = [
-              [sg.Text('Ange start och slut datum, i formen YYYY-MM-DD')],
-              [sg.Text('Startdatum', size=(15, 1)), sg.InputText('YYYY-MM-DD')],
-              [sg.Text('Slutdatum', size=(15, 1)), sg.InputText('YYYY-MM-DD')],
-              [sg.Listbox([text for text in orter])],
-              [sg.Submit(), sg.Cancel()]
-             ]
 
-    button, values = form.Layout(layout).Read()
-
-    while True:             # Event Loop
-        event, values = window.Read()
-        if event is None:
-            break
-        print(event, values)
 
 if __name__ == '__main__':
-    # for i in selenium_get_orter():
-    #     print(i.text)
-    gui()
-    # ORTER = ['Södertälje', 'Västerås', 'Flen', 'Eskilstuna', 'Strängnäs', 'Katrineholm', 'Järfälla', 'Köping']
-    # for ort in ORTER:
-    #     main(ort)
+
+
+    schedule.every(1).minute.do(run)
+    while True:
+        try:
+            schedule.run_pending()
+            time.sleep(1)
+
+        except Exception as e:
+            schedule.run_pending()
+            time.sleep(1)
+    
 
 
 
